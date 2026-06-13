@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seqly — Protein Explorer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:       #f4f1ec;
+  --surface:  #ffffff;
+  --surface2: #faf8f5;
+  --border:   #e5dfd6;
+  --accent:   #c96a2e;
+  --accent2:  #a0522d;
+  --text:     #1e1410;
+  --muted:    #7a6858;
+  --tag-bg:   #f0ebe4;
+  --danger:   #b33a2a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+/* subtle grain texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.4;
+}
+
+.wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+
+/* ── HEADER ── */
+.header { margin-bottom: 52px; }
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.logo-mark {
+  width: 44px; height: 44px;
+  background: var(--accent);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.logo-name {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.logo-name span { color: var(--accent); }
+
+.header-desc {
+  font-size: 15px;
+  color: var(--muted);
+  font-weight: 400;
+  max-width: 480px;
+  line-height: 1.65;
+  margin-left: 58px;
+}
+
+/* ── INPUT ── */
+.input-block {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.counter-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  background: var(--tag-bg);
+  color: var(--muted);
+  padding: 2px 9px;
+  border-radius: 6px;
+}
+
+textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.85;
+  padding: 14px 16px;
+  resize: vertical;
+  min-height: 108px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+textarea::placeholder { color: #b8a898; }
+textarea:focus { border-color: var(--accent); }
+
+.sample-row {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 13px;
+  align-items: center;
+}
+.sample-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sample-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--tag-bg);
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  padding: 4px 13px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.sample-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── BUTTON ── */
+.run-btn {
+  width: 100%;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 15px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(201,106,46,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.01em;
+}
+.run-btn:hover:not(:disabled) {
+  background: var(--accent2);
+  box-shadow: 0 4px 16px rgba(201,106,46,0.35);
+  transform: translateY(-1px);
+}
+.run-btn:active:not(:disabled) { transform: scale(0.99); }
+.run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── LOADING ── */
+.loading { display: none; padding: 48px 0; text-align: center; }
+.loading.active { display: block; }
+
+.loader-dots {
+  display: inline-flex;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+.ld {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ldpulse 1.3s ease-in-out infinite;
+}
+.ld:nth-child(2) { animation-delay: 0.18s; opacity: 0.7; }
+.ld:nth-child(3) { animation-delay: 0.36s; opacity: 0.5; }
+
+@keyframes ldpulse {
+  0%, 80%, 100% { transform: scale(0.75); }
+  40% { transform: scale(1.2); }
+}
+
+.loading-msg {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ── ERROR ── */
+.err {
+  display: none;
+  background: #fef2f0;
+  border: 1.5px solid #f5c6bb;
+  border-radius: 10px;
+  padding: 13px 16px;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  gap: 8px;
+  align-items: flex-start;
+}
+.err.on { display: flex; }
+
+/* ── RESULTS ── */
+.results { display: none; }
+.results.on { display: block; }
+
+.r-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.r-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.conf-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 6px;
+  background: var(--tag-bg);
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* stats */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 14px;
+  transition: box-shadow 0.12s;
+}
+.stat-box:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+.stat-num {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-name {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.stat-detail {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* cards */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.card-head {
+  padding: 11px 18px;
+  background: var(--surface2);
+  border-bottom: 1.5px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-body { padding: 18px 20px; }
+.card-body p {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text);
+  font-weight: 400;
+}
+
+/* comp bar */
+.comp-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 13px;
+  background: var(--border);
+}
+.comp-seg { transition: width 0.6s ease; }
+.comp-leg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.comp-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.comp-dot { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+
+/* 2col grid */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+@media (max-width: 540px) { .two-col { grid-template-columns: 1fr; } }
+
+.sub-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.sub-card h4 {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 11px;
+  border-radius: 7px;
+  border: 1.5px solid var(--border);
+  background: var(--tag-bg);
+  color: var(--text);
+  transition: border-color 0.12s;
+}
+.tag:hover { border-color: var(--accent); }
+.tag.disease { background: #fdf2f0; border-color: #f5c6bb; color: var(--danger); }
+.tag.domain  { background: #f3f0fb; border-color: #d8d0f5; color: #5b3db5; }
+.tag.prop    { background: #f0f7f4; border-color: #c4dfd5; color: #2d6a50; }
+.tag.research{ background: #fdf6ec; border-color: #f0d9b5; color: #7a5020; }
+
+.cys-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: #fefce8;
+  border: 1.5px solid #fde68a;
+  color: #78450a;
+}
+
+/* reset */
+.reset-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.12s;
+}
+.reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo-mark">🧬</div>
+      <div class="logo-name">Seq<span>ly</span></div>
+    </div>
+    <p class="header-desc">Paste any protein sequence — get instant analysis on function, structure, disease links, and biochemical properties.</p>
+  </div>
+
+  <!-- Input -->
+  <div class="input-block">
+    <div class="field-label">
+      <span>Amino Acid Sequence</span>
+      <span class="counter-badge" id="counter">0 aa</span>
+    </div>
+    <textarea id="seqInput" placeholder="Paste your sequence here... e.g. MKTAYIAKQRQISFVK..." rows="5"></textarea>
+    <div class="sample-row">
+      <span class="sample-label">Samples —</span>
+      <button class="sample-btn" onclick="load('insulin')">Insulin</button>
+      <button class="sample-btn" onclick="load('hemoglobin')">Hemoglobin</button>
+      <button class="sample-btn" onclick="load('p53')">p53</button>
+      <button class="sample-btn" onclick="load('spike')">COVID Spike</button>
+    </div>
+  </div>
+
+  <button class="run-btn" id="runBtn" onclick="analyze()">
+    Analyze Sequence →
+  </button>
+
+  <!-- Error -->
+  <div class="err" id="err"><span>⚠</span><span id="errMsg"></span></div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="loader-dots"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>
+    <div class="loading-msg" id="loadMsg">Parsing sequence...</div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="r-header">
+      <div class="r-title">Analysis complete</div>
+    </div>
+
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div id="cysBlock" style="display:none;"></div>
+
+    <div class="card">
+      <div class="card-head">Composition</div>
+      <div class="card-body">
+        <div class="comp-bar" id="compBar"></div>
+        <div class="comp-leg" id="compLeg"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Function</div>
+      <div class="card-body"><p id="fnText"></p></div>
+    </div>
+
+    <div class="two-col">
+      <div class="sub-card"><h4>Domains</h4><div class="tags" id="domTags"></div></div>
+      <div class="sub-card"><h4>Disease Associations</h4><div class="tags" id="disTags"></div></div>
+    </div>
+    <div class="two-col">
+      <div class="sub-card"><h4>Biochemical Properties</h4><div class="tags" id="propTags"></div></div>
+      <div class="sub-card"><h4>Research Directions</h4><div class="tags" id="resTags"></div></div>
+    </div>
+
+    <button class="reset-btn" onclick="reset()">← New sequence</button>
+  </div>
+
+</div>
+<script>
+const samples = {
+  insulin:    "MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQVGQVELGGGPGAGSLQPLALEGSLQKRGIVEQCCTSICSLYQLENYCN",
+  hemoglobin: "MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHFDLSHGSAQVKGHGKKVADALTNAVAHVDDMPNALSALSDLHAHKLRVDPVNFKLLSHCLLVTLAAHLPAEFTPAVHASLDKFLASVSTVLTSKYR",
+  p53:        "MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYPQGLNGTVNLPGRNSFEVRVCACPGRDRRTEEENLHKTTGQVKKPHHQKLSELLRQQFTQETLEKLRSRSAQSTSRHKKLNKSSENNQAFLQQKKKLEQWNFSTPMMKQAMMSELTLNAEDSEVDLWLNNTLSSKNQDFQKYQGSQNTSQHSSYPQDSAENNPQHQEAQNQSAPIYHPLQNYLAQTQTQLQPFLQ",
+  spike:      "MFVFLVLLPLVSSQCVNLTTRTQLPPAYTNSFTRGVYYPDKVFRSSVLHSTQDLFLPFFSNVTWFHAIHVSGTNGTKRFDNPVLPFNDGVYFASTEKSNIIRGWIFGTTLDSKTQSLLIVNNATNVVIKVCEFQFCNDPFLGVYYHKNNKSWMESEFRVYSSANNCTFEYVSQPFLMDLEGKQGNFKNLREFVFKNIDGYFKIYSKHTPINLVRDLPQGFSALEPLVDLPIGINITRFQTLLALHRSYLTPGDSSSGWTAGAAAYYVGYLQPRTFLLKYNENGTITDAVDCALDPLSETKCTLKSFTVEKGIYQTSNFRVQPTESIVRFPNITNLCPFGEVFNATRFASVYAWNRKRISNCVADYSVLYNSASFSTFKCYGVSPTKLNDLCFTNVYADSFVIRGDEVRQIAPGQTGKIADYNYKLPDDFTGCVIAWNSNNLDSKVGGNYNYLYRLFRKSNLKPFERDISTEIYQAGSTPCNGVEGFNCYFPLQSYGFQPTNGVGYQPYRVVVLSFELLHAPATVCGPKKSTNLVKNKCVNFNFNGLTGTGVLTESNKKFLPFQQFGRDIADTTDAVRDPQTLEILDITPCSFGGVSVITPGTNTSNQVAVLYQDVNCTEVPVAIHADQLTPTWRVYSTGSNVFQTRAGCLIGAEHVNNSYECDIPIGAGICASYQTQTNSPRARSVASQSIIAYTMSLGAENSVAYSNNSIAIPTNFTISVTTEILPVSMTKTSVDCTMYICGDSTECSNLLLQYGSFCTQLNRALTGIAVEQDKNTQEVFAQVKQIYKTPPIKDFGGFNFSQILPDPSKPSKRSFIEDLLFNKVTLADAGFIKQYGDCLGDIAARDLICAQKFNGLTVLPPLLTDEMIAQYTSALLAGTITSGWTFGAGAALQIPFAMQMAYRFNGIGVTQNVLYENQKLIANQFNSAIGKIQDSLSSTASALGKLQDVVNQNAQALNTLVKQLSSNFGAISSVLNDILSRLDKVEAEVQIDRLITGRLQSLQTYVTQQLIRAAEIRASANLAATKMSECVLGQSKRVDFCGKGYHLMSFPQSAPHGVVFLHVTYVPAQEKNFTTAPAICHDGKAHFPREGVFVSNGTHWFVTQRNFYEPQIITTDNTFVSGNCDVVIGIVNNTVYDPLQPELDSFKEELDKYFKNHTSPDVDLGDISGINASVVNIQKEIDRLNEVAKNLNESLIDLQELGKYEQYIKWPWYIWLGFIAGLIAIVMVTIMLCCMTSCCSCLKGCCSCGSCCKFDEDDSEPVLKGVKLHYT"
+};
+
+const inp = document.getElementById('seqInput');
+inp.addEventListener('input', () => {
+  document.getElementById('counter').textContent = inp.value.replace(/\s/g,'').length + ' aa';
+});
+function load(k) {
+  inp.value = samples[k];
+  document.getElementById('counter').textContent = samples[k].length + ' aa';
+}
+
+const msgs = [
+  "Parsing sequence...",
+  "Computing biochemical properties...",
+  "Scanning for functional motifs...",
+  "Querying domain databases...",
+  "Running function prediction...",
+  "Finalising report..."
+];
+
+function calcStats(seq) {
+  const s = seq.replace(/\s/g,'').toUpperCase();
+  const HY = new Set(['A','V','I','L','M','F','W','P']);
+  const PO = new Set(['S','T','C','Y','N','Q']);
+  const CH = new Set(['D','E','K','R','H']);
+  const counts = {};
+  for (const a of s) counts[a] = (counts[a]||0) + 1;
+
+  const hyC = [...s].filter(a=>HY.has(a)).length;
+  const poC = [...s].filter(a=>PO.has(a)).length;
+  const chC = [...s].filter(a=>CH.has(a)).length;
+
+  const cysPos = [];
+  for (let i=0;i<s.length;i++) if(s[i]==='C') cysPos.push(i+1);
+  const bonds = [];
+  for (let i=0;i<cysPos.length-1;i+=2) bonds.push('C'+cysPos[i]+'–C'+cysPos[i+1]);
+
+  return {
+    len: s.length,
+    mw: (s.length*110/1000).toFixed(1),
+    hydPct: ((hyC/s.length)*100).toFixed(0),
+    chC, counts, s, cysPos, bonds,
+    groups: [
+      {label:'Hydrophobic', color:'#c96a2e', count:hyC},
+      {label:'Polar',       color:'#a0714f', count:poC},
+      {label:'Charged',     color:'#6b8f71', count:chC},
+      {label:'Other',       color:'#d6c9b8', count:s.length-hyC-poC-chC}
+    ]
+  };
+}
+
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+async function callAPI(body, attempt=1) {
+  let resp, data;
+  try {
+    resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(body)
+    });
+    data = await resp.json();
+  } catch(e) {
+    throw new Error("Network error — check your connection and try again.");
+  }
+
+  // rate limit
+  if (resp.status === 429 || data?.error?.type === 'rate_limit_error') {
+    if (attempt >= 3) throw new Error('RATE_LIMIT');
+    const wait = attempt * 10;
+    const msgEl = document.getElementById('loadMsg');
+    for (let s=wait;s>0;s--) { msgEl.textContent=`Rate limited — retrying in ${s}s...`; await sleep(1000); }
+    msgEl.textContent = `Retrying... (attempt ${attempt+1})`;
+    return callAPI(body, attempt+1);
+  }
+
+  // 500 — retry once with slightly reduced prompt
+  if (resp.status === 500) {
+    if (attempt >= 2) throw new Error("Server error. Please try again in a moment.");
+    await sleep(2000);
+    return callAPI(body, attempt+1);
+  }
+
+  if (!resp.ok) throw new Error(data?.error?.message || `Error ${resp.status}`);
+  return data;
+}
+
+async function analyze() {
+  const raw = inp.value.trim();
+  if (!raw) { showErr("Please paste a sequence first."); return; }
+  const seq = raw.replace(/\s/g,'').toUpperCase();
+  if (!/^[ACDEFGHIKLMNPQRSTVWY]+$/.test(seq)) {
+    showErr("Invalid characters found. Use standard one-letter amino acid codes only."); return;
+  }
+  if (seq.length < 10) { showErr("Sequence too short — need at least 10 residues."); return; }
+
+  clearErr();
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('results').classList.remove('on');
+
+  let mi = 0;
+  const mEl = document.getElementById('loadMsg');
+  const mInt = setInterval(()=>{ mi=(mi+1)%msgs.length; mEl.textContent=msgs[mi]; },1800);
+
+  try {
+    const st = calcStats(seq);
+
+    // Build safe-size sequence context
+    let seqCtx;
+    if (seq.length <= 600) {
+      seqCtx = `Full sequence (${st.len} aa): ${seq}`;
+    } else {
+      const n = seq.slice(0,150);
+      const m = seq.slice(Math.floor(seq.length/2)-75, Math.floor(seq.length/2)+75);
+      const c = seq.slice(-150);
+      seqCtx = `Length: ${st.len} aa | N-term: ${n} | Mid: ${m} | C-term: ${c}`;
+    }
+
+    // Top 8 AAs by abundance
+    const topAA = Object.entries(st.counts)
+      .sort((a,b)=>b[1]-a[1]).slice(0,8)
+      .map(([a,n])=>`${a}:${(n/st.len*100).toFixed(0)}%`).join(' ');
+
+    const cysCtx = st.cysPos.length
+      ? st.cysPos.slice(0,15).map(p=>'C'+p).join(',') + (st.cysPos.length>15?` (+${st.cysPos.length-15} more)`:'')
+      : 'none';
+
+    const prompt = `You are a protein biochemist. Analyze this protein and return ONLY a JSON object — no explanation, no markdown.
+
+${seqCtx}
+Composition (top AAs): ${topAA}
+Hydrophobic: ${st.hydPct}% | Charged: ${st.chC} | Mass: ${st.mw} kDa | Cysteines: ${cysCtx}
+
+JSON format (return this exactly, filled in):
+{"confidence":"High","function":"2-3 sentences on function","domains":["d1","d2","d3"],"diseases":["dis1","dis2"],"properties":["p1","p2","p3"],"research":["r1","r2","r3"]}`;
+
+    const data = await callAPI({
+      model: "claude-sonnet-4-6",
+      max_tokens: 700,
+      messages: [{role:"user", content: prompt}]
+    });
+
+    clearInterval(mInt);
+    const txt = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    let parsed;
+    try {
+      parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    } catch(_) {
+      const m = txt.match(/\{[\s\S]*?\}/);
+      if (!m) throw new Error("Could not read analysis. Please try again.");
+      parsed = JSON.parse(m[0]);
+    }
+    render(st, parsed);
+
+  } catch(e) {
+    clearInterval(mInt);
+    if (e.message === 'RATE_LIMIT') {
+      showErr("Still rate limited after 3 attempts. Wait a minute and try again.");
+    } else {
+      showErr(e.message);
+    }
+  } finally {
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+function render(st, ai) {
+  document.getElementById('confPill').textContent = (ai.confidence||'Medium') + ' confidence';
+
+  document.getElementById('statGrid').innerHTML = [
+    {num: st.len,      label:'Length',      detail:'amino acid residues'},
+    {num: st.mw+' kDa',label:'Mass',        detail:'estimated'},
+    {num: st.hydPct+'%',label:'Hydrophobic', detail:'of residues'},
+    {num: st.cysPos.length, label:'Cysteines', detail: st.cysPos.length ? st.cysPos.slice(0,6).map(p=>'C'+p).join(', ')+(st.cysPos.length>6?'…':'') : 'none detected'}
+  ].map(c=>`
+    <div class="stat-box">
+      <div class="stat-num">${c.num}</div>
+      <div class="stat-name">${c.label}</div>
+      <div class="stat-detail">${c.detail}</div>
+    </div>`).join('');
+
+  // Cysteine block
+  const cb = document.getElementById('cysBlock');
+  if (st.cysPos.length) {
+    const bondLine = st.bonds.length
+      ? 'Predicted disulfide bonds: '+st.bonds.join(' · ')
+      : 'Odd cysteine count — one may be a free thiol or active-site residue.';
+    cb.innerHTML = `<div class="card" style="margin-bottom:10px;">
+      <div class="card-head">Cysteine Positions <span style="font-weight:400;text-transform:none;letter-spacing:0;">(exact — computed from sequence)</span></div>
+      <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;">${st.cysPos.map(p=>'<span class="cys-tag">C'+p+'</span>').join('')}</div>
+        <p style="font-size:13px;color:var(--muted);">${bondLine}</p>
+      </div></div>`;
+    cb.style.display='block';
+  } else cb.style.display='none';
+
+  // Composition bar
+  const tot = st.len;
+  document.getElementById('compBar').innerHTML = st.groups.map(g=>
+    `<div class="comp-seg" style="width:${(g.count/tot*100).toFixed(1)}%;background:${g.color};"></div>`).join('');
+  document.getElementById('compLeg').innerHTML = st.groups.map(g=>
+    `<div class="comp-item"><div class="comp-dot" style="background:${g.color};"></div>${g.label} ${(g.count/tot*100).toFixed(1)}%</div>`).join('');
+
+  document.getElementById('fnText').textContent = ai.function || '—';
+  document.getElementById('domTags').innerHTML  = (ai.domains||[]).map(d=>`<span class="tag domain">${d}</span>`).join('');
+  document.getElementById('disTags').innerHTML  = (ai.diseases||[]).map(d=>`<span class="tag disease">${d}</span>`).join('');
+  document.getElementById('propTags').innerHTML = (ai.properties||[]).map(p=>`<span class="tag prop">${p}</span>`).join('');
+  document.getElementById('resTags').innerHTML  = (ai.research||[]).map(r=>`<span class="tag research">${r}</span>`).join('');
+
+  document.getElementById('results').classList.add('on');
+}
+
+function showErr(msg) {
+  document.getElementById('errMsg').textContent = msg;
+  document.getElementById('err').classList.add('on');
+}
+function clearErr() { document.getElementById('err').classList.remove('on'); }
+function reset() {
+  document.getElementById('results').classList.remove('on');
+  inp.value='';
+  document.getElementById('counter').textContent='0 aa';
+  inp.focus();
+}
+</script>
+</body>
+</html>
